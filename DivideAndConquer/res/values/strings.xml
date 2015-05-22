@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">Divide and Conquer!</string>
-    <string name="new_game">New game</string>
-    <string name="game_over">Game over</string>
+    <string name="app_name">Territory!</string>
+    <string name="new_game">START</string>
+    <string name="game_over">GAME OVER</string>
     <string name="instructions">Draw vertical and horizontal lines to partition
         the balls into smaller spaces.  Once the balls are contained, you get
         to move on to the next level.
     </string>
-    <string name="quit">Exit</string>
+    <string name="quit">EXIT</string>
 
     <string name="percent_contained"><xliff:g id="number">%d%%</xliff:g></string>
     <string name="level">Level <xliff:g id="number">%d</xliff:g></string>
@@ -27,4 +27,6 @@
     <string name="settings_three_lives">3 lives</string>
     <string name="settings_one_life">1 life</string>
 
+    <string name="banner_ad_unit_id">ca-app-pub-8879010042696561/9937401534</string>
+    <string name="interstitial_ad_unit_id">ca-app-pub-8879010042696561/2414134730</string>
 </resources>

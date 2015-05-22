@@ -1,6 +1,4 @@
-This game's concept was drawn from the ancient game JezzBall.
-Base code written by Karl Rosaen. This version is a variant of it with many "inside" modifications that changes the gameplay completely
-
+/*
 Copyright 2015 Yaniv Bokobza
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,3 +12,15 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+ */
+package com.wee.boo.territory;
+
+/**
+ * Used by dialogs to tell the activity the user wants a new game.
+ */
+public interface NewGameCallback {
+    /**
+     * The user wants to start a new game.
+     */
+    void onNewGame();
+}

@@ -1,38 +1,52 @@
 /*
- * Copyright (C) 2008 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package com.google.android.divideandconquer;
+Copyright 2015 Yaniv Bokobza
 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+package com.wee.boo.territory;
+
+import java.util.Stack;
+
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.Window;
-import android.view.Gravity;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.graphics.Color;
 
-import java.util.Stack;
+import com.google.android.divideandconquer.R;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
 
 /**
  * The activity for the game.  Listens for callbacks from the game engine, and
@@ -42,8 +56,10 @@ import java.util.Stack;
 public class DivideAndConquerActivity extends Activity
         implements DivideAndConquerView.BallEngineCallBack,
         NewGameCallback,
-        DialogInterface.OnCancelListener {
+        DialogInterface.OnCancelListener,
+        IActivityRequestHandler{
 
+	private static final String TAG = "Territory";
     private static final int NEW_GAME_NUM_BALLS = 1;
     private static final double LEVEL_UP_THRESHOLD = 0.8;
     private static final int COLLISION_VIBRATE_MILLIS = 50;
@@ -68,22 +84,108 @@ public class DivideAndConquerActivity extends Activity
 
     private Toast mCurrentToast;
 
+    /** PRIVATE METHODS TO HANDLE ADS */
+    public static final int SHOW_INTERSTITIAL = 222;
+	private AdView mAdView;
+	private InterstitialAd mInterstitialView;
+	private AdState adInterstitialState = AdState.NOT_SHOWN_YET;
+	private GameState gameState = GameState.GAME_OVER;
+	private enum AdState {
+		SHOWN_IN_GAMEOVER,
+		SHOWN_IN_PAUSE,
+		NOT_SHOWN_YET
+	}
+	private enum GameState {
+		GAME_OVER,
+		PAUSE,
+		RUN
+	}
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Turn off the title bar
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        setContentView(R.layout.main);
-        mBallsView = (DivideAndConquerView) findViewById(R.id.ballsView);
+        
+        RelativeLayout layout = new RelativeLayout(this);
+        
+        LayoutInflater li = LayoutInflater.from(this);
+        LinearLayout mainLayout = (LinearLayout) li.inflate(R.layout.main, null);
+        
+        mBallsView = (DivideAndConquerView) mainLayout.findViewById(R.id.ballsView);
         mBallsView.setCallback(this);
 
-        mPercentContained = (TextView) findViewById(R.id.percentContained);
-        mLevelInfo = (TextView) findViewById(R.id.levelInfo);
-        mLivesLeft = (TextView) findViewById(R.id.livesLeft);
+        mPercentContained = (TextView) mainLayout.findViewById(R.id.percentContained);
+        mLevelInfo = (TextView) mainLayout.findViewById(R.id.levelInfo);
+        mLivesLeft = (TextView) mainLayout.findViewById(R.id.livesLeft);
 
         // we'll vibrate when the ball hits the moving line
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        
+        
+        // Admob view setup
+	    mAdView = new AdView(this);
+        mAdView.setAdSize(AdSize.SMART_BANNER);
+        mAdView.setAdUnitId( getString(R.string.banner_ad_unit_id) );
+	    RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+	    lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+	    mAdView.setLayoutParams(lp);
+	    mAdView.setId(77777);
+	    
+	    lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.FILL_PARENT, RelativeLayout.LayoutParams.FILL_PARENT);
+	    lp.addRule(RelativeLayout.ABOVE, 77777);
+	    mainLayout.setLayoutParams(lp);
+	    
+	    layout.addView(mainLayout);
+	    layout.addView(mAdView);
+	    setContentView(layout);
+	    
+	    mInterstitialView = new InterstitialAd(this);
+        mInterstitialView.setAdUnitId( getString(R.string.interstitial_ad_unit_id) );
+        requestNewInterstitial();
+        
+        mInterstitialView.setAdListener(new AdListener() {
+        	/** Called when an ad is loaded. */
+        	public void onAdLoaded(){
+        		Log.d(TAG, "onAdLoaded");
+            }
+        	
+        	/**
+			 * Called when an ad is clicked and about to return to the application.
+			 */
+			@Override
+			public void onAdClosed() {
+				Log.d(TAG, "onAdClosed");
+				requestNewInterstitial();
+			}
+
+			/** Called when an ad failed to load. */
+			@Override
+			public void onAdFailedToLoad(int error) {
+				Log.e(TAG, "onAdFailedToLoad error code:"+error);
+			}
+
+			/**
+			 * Called when an ad is clicked and going to start a new Activity
+			 * that will leave the application (e.g. breaking out to the Browser
+			 * or Maps application).
+			 */
+			@Override
+			public void onAdLeftApplication() {
+				Log.d(TAG, "onAdLeftApplication");
+			}
+
+			/**
+			 * Called when an Activity is created in front of the app (e.g. an
+			 * interstitial is shown, or an ad is clicked and launches a new
+			 * Activity).
+			 */
+			@Override
+			public void onAdOpened() {
+				Log.d(TAG, "onAdOpened");
+			}
+        });
+        
+        showAd();
     }
 
     /** {@inheritDoc} */
@@ -99,10 +201,13 @@ public class DivideAndConquerActivity extends Activity
     @Override
     protected Dialog onCreateDialog(int id) {
         if (id == WELCOME_DIALOG) {
+        	gameState = GameState.RUN;
             mWelcomeDialog = new WelcomeDialog(this, this);
             mWelcomeDialog.setOnCancelListener(this);
             return mWelcomeDialog;
         } else if (id == GAME_OVER_DIALOG) {
+        	gameState = GameState.GAME_OVER;
+        	showInterstitialNow();
             mGameOverDialog = new GameOverDialog(this, this);
             mGameOverDialog.setOnCancelListener(this);
             return mGameOverDialog;
@@ -179,7 +284,7 @@ public class DivideAndConquerActivity extends Activity
         restoreMode();
     }
 
-
+    
     private void saveMode() {
         // don't want to restore to a state where user can't resume game.
         final DivideAndConquerView.Mode mode = mBallsView.getMode();
@@ -299,6 +404,8 @@ public class DivideAndConquerActivity extends Activity
 
     /** {@inheritDoc} */
     public void onNewGame() {
+    	adInterstitialState = AdState.NOT_SHOWN_YET;
+    	gameState = GameState.RUN;
         mNumBalls = NEW_GAME_NUM_BALLS;
         mNumLives = mNumLivesStart;
         updatePercentDisplay(0);
@@ -307,7 +414,7 @@ public class DivideAndConquerActivity extends Activity
         mBallsView.getEngine().reset(SystemClock.elapsedRealtime(), mNumBalls);
         mBallsView.setMode(DivideAndConquerView.Mode.Bouncing);
     }
-
+    
     /**
      * Update the header displaying the current level
      */
@@ -332,4 +439,79 @@ public class DivideAndConquerActivity extends Activity
             finish();
         }
     }
+    
+    
+    /** PRIVATE METHODS TO HANDLE ADS */
+    private void showInterstitialNow() {
+        if(mInterstitialView.isLoaded() && isAllowToShowAd(adInterstitialState)) {
+        	mInterstitialView.show();
+        	adInterstitialState = AdState.SHOWN_IN_GAMEOVER;
+        	
+        } else {
+        	if(!mInterstitialView.isLoaded()) {
+        		requestNewInterstitial();
+        	}
+        	showAd();
+        }
+	}
+    
+    private boolean isAllowToShowAd(AdState adState) {
+    	boolean isPauseMode = mBallsView.getMode() == DivideAndConquerView.Mode.Paused || mBallsView.getMode() == DivideAndConquerView.Mode.PausedByUser;
+    	boolean isGameOverMode = gameState == GameState.GAME_OVER;
+    	
+    	if(adState.equals(AdState.NOT_SHOWN_YET)) {
+    		return true;
+    	} else if(adState == AdState.SHOWN_IN_GAMEOVER && isGameOverMode) {
+    		return false;	// don't show
+    	} else if(adState == AdState.SHOWN_IN_PAUSE && isPauseMode) {
+    		return false;	// don't show
+    	} else {
+    		if(isPauseMode) {
+    			adState = AdState.SHOWN_IN_PAUSE;
+    		} else if (isGameOverMode) {
+    			adState = AdState.SHOWN_IN_GAMEOVER;
+    		}
+    		return true;
+    	}
+    }
+    
+    private void showAd() {
+		if(mAdView == null) {
+    		mAdView = new AdView(this);
+            mAdView.setAdSize(AdSize.SMART_BANNER);
+            mAdView.setAdUnitId( getString(R.string.banner_ad_unit_id) );
+    	    RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+    	    lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+    	    mAdView.setLayoutParams(lp);
+    	}
+		mAdView.setVisibility(View.VISIBLE);
+		AdRequest adBunnerRequest = new AdRequest.Builder().build();
+		mAdView.loadAd(adBunnerRequest);
+	}
+    private void requestNewInterstitial() {
+    	AdRequest adInterstitialRequest = new AdRequest.Builder().build();
+        mInterstitialView.loadAd(adInterstitialRequest);	// only for loading the interstitial - not showing right away..
+    }
+    
+	@Override
+	public void showInterstitialGW() {
+		handler.sendEmptyMessage(SHOW_INTERSTITIAL);
+	}
+	@SuppressLint("HandlerLeak")
+	protected Handler handler = new Handler()
+    {
+        @Override
+        public void handleMessage(Message msg) {
+            switch(msg.what) {
+                case SHOW_INTERSTITIAL:
+                {
+                	showInterstitialNow();
+                    break;
+                }
+            }
+        }
+    };
+
+    
+	
 }

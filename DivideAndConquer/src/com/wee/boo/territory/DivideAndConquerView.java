@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2008 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+Copyright 2015 Yaniv Bokobza
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
  */
-package com.google.android.divideandconquer;
+package com.wee.boo.territory;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -30,11 +30,13 @@ import android.view.View;
 import java.util.List;
 import java.util.ArrayList;
 
+import com.google.android.divideandconquer.R;
+
 /**
  * Handles the visual display and touch input for the game.
  */
 public class DivideAndConquerView extends View implements BallEngine.BallEventCallBack {
-
+	private IActivityRequestHandler myRequestHandler;
     static final int BORDER_WIDTH = 10;
 
     // this needs to match size of ball drawable
@@ -125,17 +127,17 @@ public class DivideAndConquerView extends View implements BallEngine.BallEventCa
 
     public DivideAndConquerView(Context context, AttributeSet attrs) {
         super(context, attrs);
-
+        this.myRequestHandler = (IActivityRequestHandler) context;
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
         mPaint.setStrokeWidth(2);
         mPaint.setColor(Color.BLACK);
-
+        
         // so we can see the back key
         setFocusableInTouchMode(true);
-
+        
         drawBackgroundGradient();
-
+        
         mBallBitmap = BitmapFactory.decodeResource(
                 context.getResources(),
                 R.drawable.ball);
@@ -221,6 +223,7 @@ public class DivideAndConquerView extends View implements BallEngine.BallEventCa
         // (exit the activity)
         if (keyCode == KeyEvent.KEYCODE_BACK && mMode == Mode.Bouncing) {
             setMode(Mode.PausedByUser);
+            myRequestHandler.showInterstitialGW();
             return true;
         }
         return super.onKeyDown(keyCode, event);
