@@ -15,9 +15,15 @@ limitations under the License.
  */
 package com.wee.boo.territory;
 
+import java.util.ArrayList;
+
 import android.content.Context;
-import android.content.res.Resources;
-import android.graphics.*;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Debug;
 import android.os.SystemClock;
@@ -27,15 +33,11 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.util.List;
-import java.util.ArrayList;
-
-import com.google.android.divideandconquer.R;
 
 /**
  * Handles the visual display and touch input for the game.
  */
-public class DivideAndConquerView extends View implements BallEngine.BallEventCallBack {
+public class TerritoryView extends View implements BallEngine.BallEventCallBack {
 	private IActivityRequestHandler myRequestHandler;
     static final int BORDER_WIDTH = 10;
 
@@ -125,7 +127,7 @@ public class DivideAndConquerView extends View implements BallEngine.BallEventCa
         PausedByUser
     }
 
-    public DivideAndConquerView(Context context, AttributeSet attrs) {
+    public TerritoryView(Context context, AttributeSet attrs) {
         super(context, attrs);
         this.myRequestHandler = (IActivityRequestHandler) context;
         mPaint = new Paint();

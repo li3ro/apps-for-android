@@ -16,7 +16,10 @@
     <string name="lives_left"><xliff:g id="number">%d</xliff:g> lives left</string>
 
     <string name="unpause_instructions">Touch to unpause</string>
-
+    
+    <string name="action_settings">Settings</string>
+    <string name="action_new_game">New Game</string>
+    
     <string name="settings_vibrate">Vibration</string>
     <string name="settings_vibrate_summary">vibrate when bad stuff happens</string>
 

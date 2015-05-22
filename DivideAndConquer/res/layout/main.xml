@@ -32,7 +32,7 @@
             android:textAppearance="?android:attr/textAppearanceMedium" />
     </RelativeLayout>
 
-    <com.wee.boo.territory.DivideAndConquerView
+    <com.wee.boo.territory.TerritoryView
             android:id="@+id/ballsView"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content" />

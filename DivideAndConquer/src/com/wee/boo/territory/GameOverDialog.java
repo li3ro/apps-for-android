@@ -16,8 +16,6 @@ limitations under the License.
 
 package com.wee.boo.territory;
 
-import com.google.android.divideandconquer.R;
-
 import android.app.Dialog;
 import android.view.View;
 import android.content.Context;

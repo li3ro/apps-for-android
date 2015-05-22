@@ -41,7 +41,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.divideandconquer.R;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
@@ -53,8 +52,8 @@ import com.google.android.gms.ads.InterstitialAd;
  * response appropriately, such as bringing up a 'game over' dialog when a ball
  * hits a moving line and there is only one life left.
  */
-public class DivideAndConquerActivity extends Activity
-        implements DivideAndConquerView.BallEngineCallBack,
+public class TerritoryActivity extends Activity
+        implements TerritoryView.BallEngineCallBack,
         NewGameCallback,
         DialogInterface.OnCancelListener,
         IActivityRequestHandler{
@@ -68,7 +67,7 @@ public class DivideAndConquerActivity extends Activity
     
     private int mNumBalls = NEW_GAME_NUM_BALLS;
     
-    private DivideAndConquerView mBallsView;
+    private TerritoryView mBallsView;
 
     private static final int WELCOME_DIALOG = 20;
     private static final int GAME_OVER_DIALOG = 21;
@@ -83,7 +82,7 @@ public class DivideAndConquerActivity extends Activity
     private int mNumLivesStart = 5;
 
     private Toast mCurrentToast;
-
+    
     /** PRIVATE METHODS TO HANDLE ADS */
     public static final int SHOW_INTERSTITIAL = 222;
 	private AdView mAdView;
@@ -111,7 +110,7 @@ public class DivideAndConquerActivity extends Activity
         LayoutInflater li = LayoutInflater.from(this);
         LinearLayout mainLayout = (LinearLayout) li.inflate(R.layout.main, null);
         
-        mBallsView = (DivideAndConquerView) mainLayout.findViewById(R.id.ballsView);
+        mBallsView = (TerritoryView) mainLayout.findViewById(R.id.ballsView);
         mBallsView.setCallback(this);
 
         mPercentContained = (TextView) mainLayout.findViewById(R.id.percentContained);
@@ -192,7 +191,7 @@ public class DivideAndConquerActivity extends Activity
     public void onEngineReady(BallEngine ballEngine) {
         // display 10 balls bouncing around for visual effect
         ballEngine.reset(SystemClock.elapsedRealtime(), 10);
-        mBallsView.setMode(DivideAndConquerView.Mode.Bouncing);
+        mBallsView.setMode(TerritoryView.Mode.Bouncing);
 
         // show the welcome dialog
         showDialog(WELCOME_DIALOG);
@@ -218,7 +217,7 @@ public class DivideAndConquerActivity extends Activity
     @Override
     protected void onPause() {
         super.onPause();
-        mBallsView.setMode(DivideAndConquerView.Mode.PausedByUser);
+        mBallsView.setMode(TerritoryView.Mode.PausedByUser);
     }
 
     @Override
@@ -230,43 +229,35 @@ public class DivideAndConquerActivity extends Activity
 
         mNumLivesStart = Preferences.getCurrentDifficulty(this).getLivesToStart();
     }
-
-    private static final int MENU_NEW_GAME = Menu.FIRST;
-    private static final int MENU_SETTINGS = Menu.FIRST + 1;
-
+    
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-
-        menu.add(0, MENU_NEW_GAME, MENU_NEW_GAME, "New Game");
-        menu.add(0, MENU_SETTINGS, MENU_SETTINGS, "Settings");
-
-        return true;        
+    	
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;    
     }
 
     /**
      * We pause the game while the menu is open; this remembers what it was
      * so we can restore when the menu closes
      */
-    Stack<DivideAndConquerView.Mode> mRestoreMode = new Stack<DivideAndConquerView.Mode>();
+    Stack<TerritoryView.Mode> mRestoreMode = new Stack<TerritoryView.Mode>();
 
     @Override
     public boolean onMenuOpened(int featureId, Menu menu) {
         saveMode();
-        mBallsView.setMode(DivideAndConquerView.Mode.Paused);
+        mBallsView.setMode(TerritoryView.Mode.Paused);
         return super.onMenuOpened(featureId, menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        super.onOptionsItemSelected(item);
-
-        switch (item.getItemId()) {
-            case MENU_NEW_GAME:
+    	switch (item.getItemId()) {
+            case R.id.action_new_game:
                 cancelToasts();
                 onNewGame();
                 break;
-            case MENU_SETTINGS:
+            case R.id.action_settings:
                 final Intent intent = new Intent();
                 intent.setClass(this, Preferences.class);
                 startActivity(intent);
@@ -275,7 +266,7 @@ public class DivideAndConquerActivity extends Activity
 
         mRestoreMode.pop(); // don't want to restore when an action was taken
 
-        return true;
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -287,9 +278,9 @@ public class DivideAndConquerActivity extends Activity
     
     private void saveMode() {
         // don't want to restore to a state where user can't resume game.
-        final DivideAndConquerView.Mode mode = mBallsView.getMode();
-        final DivideAndConquerView.Mode toRestore = (mode == DivideAndConquerView.Mode.Paused) ?
-                DivideAndConquerView.Mode.PausedByUser : mode;
+        final TerritoryView.Mode mode = mBallsView.getMode();
+        final TerritoryView.Mode toRestore = (mode == TerritoryView.Mode.Paused) ?
+                TerritoryView.Mode.PausedByUser : mode;
         mRestoreMode.push(toRestore);
     }
 
@@ -303,7 +294,7 @@ public class DivideAndConquerActivity extends Activity
     public void onBallHitsMovingLine(final BallEngine ballEngine, float x, float y) {
         if (--mNumLives == 0) {
             saveMode();
-            mBallsView.setMode(DivideAndConquerView.Mode.Paused);
+            mBallsView.setMode(TerritoryView.Mode.Paused);
 
             // vibrate three times
             if (mVibrateOn) {
@@ -314,6 +305,8 @@ public class DivideAndConquerActivity extends Activity
                         -1);
             }
             showDialog(GAME_OVER_DIALOG);
+            gameState = GameState.GAME_OVER;
+        	showInterstitialNow();
         } else {
             if (mVibrateOn) {
                 mVibrator.vibrate(COLLISION_VIBRATE_MILLIS);
@@ -359,7 +352,7 @@ public class DivideAndConquerActivity extends Activity
         updatePercentDisplay(0);
         updateLevelDisplay(mNumBalls);
         ballEngine.reset(SystemClock.elapsedRealtime(), mNumBalls);
-        mBallsView.setMode(DivideAndConquerView.Mode.Bouncing);
+        mBallsView.setMode(TerritoryView.Mode.Bouncing);
         if (mNumBalls % 4 == 0) {
             mNumLives++;
             updateLivesDisplay(mNumLives);
@@ -412,7 +405,7 @@ public class DivideAndConquerActivity extends Activity
         updateLivesDisplay(mNumLives);
         updateLevelDisplay(mNumBalls);
         mBallsView.getEngine().reset(SystemClock.elapsedRealtime(), mNumBalls);
-        mBallsView.setMode(DivideAndConquerView.Mode.Bouncing);
+        mBallsView.setMode(TerritoryView.Mode.Bouncing);
     }
     
     /**
@@ -456,7 +449,7 @@ public class DivideAndConquerActivity extends Activity
 	}
     
     private boolean isAllowToShowAd(AdState adState) {
-    	boolean isPauseMode = mBallsView.getMode() == DivideAndConquerView.Mode.Paused || mBallsView.getMode() == DivideAndConquerView.Mode.PausedByUser;
+    	boolean isPauseMode = mBallsView.getMode() == TerritoryView.Mode.Paused || mBallsView.getMode() == TerritoryView.Mode.PausedByUser;
     	boolean isGameOverMode = gameState == GameState.GAME_OVER;
     	
     	if(adState.equals(AdState.NOT_SHOWN_YET)) {

@@ -15,8 +15,6 @@ limitations under the License.
  */
 package com.wee.boo.territory;
 
-import com.google.android.divideandconquer.R;
-
 import android.os.Bundle;
 import android.preference.*;
 import android.content.Context;

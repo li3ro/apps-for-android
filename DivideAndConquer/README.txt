@@ -1,5 +1,5 @@
 This game's concept was drawn from the ancient game JezzBall.
-Base code written by Karl Rosaen. This version is a variant of it with many "inside" modifications that changes the gameplay completely
+Base code from the open source game Divide And Conquer. This version is a variant of it with many "inside" modifications that changes the gameplay completely
 
 Copyright 2015 Yaniv Bokobza
 
